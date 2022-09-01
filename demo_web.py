@@ -27,6 +27,14 @@ def run(engine):
                 if mask.ndim > 2:
                     mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
 
+            seed = st.number_input(
+                label='seed',
+                value=42
+            )
+            if seed:
+                print("Change random seed: " + str(seed))
+                np.random.seed(seed=seed)
+
             num_inference_steps = st.select_slider(
                 label='num_inference_steps',
                 options=range(1, 150),
@@ -50,15 +58,19 @@ def run(engine):
 
         if prompt:
             # st.markdown(f'<p style="text-align: center;">{prompt}</p>', unsafe_allow_html=True)
+            cancel = st.form_submit_button(label = 'Cancel')
             image = engine(
                 prompt = prompt,
                 init_image = init_image,
                 mask = mask,
                 strength = strength,
                 num_inference_steps = num_inference_steps,
-                guidance_scale = guidance_scale
+                guidance_scale = guidance_scale,
+                progress_bar = st.progress(0),
+                cancel = cancel,
             )
-            st.image(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), width=512)
+            if image is not None:
+                st.image(Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB)), width=512)
 
 @st.cache(allow_output_mutation=True)
 def load_engine(args):

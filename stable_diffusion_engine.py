@@ -9,7 +9,7 @@ from tqdm import tqdm
 from huggingface_hub import hf_hub_download
 from diffusers import LMSDiscreteScheduler, PNDMScheduler
 import cv2
-
+from streamlit.elements.progress import ProgressMixin
 
 def result(var):
     return next(iter(var.values()))
@@ -106,7 +106,9 @@ class StableDiffusionEngine:
             strength = 0.5,
             num_inference_steps = 32,
             guidance_scale = 7.5,
-            eta = 0.0
+            eta = 0.0,
+            progress_bar:ProgressMixin = None,
+            cancel:bool = False,
     ):
         # extract condition
         tokens = self.tokenizer(
@@ -173,7 +175,12 @@ class StableDiffusionEngine:
             extra_step_kwargs["eta"] = eta
 
         t_start = max(num_inference_steps - init_timestep + offset, 0)
-        for i, t in tqdm(enumerate(self.scheduler.timesteps[t_start:])):
+        time_iter = self.scheduler.timesteps[t_start:]
+        t_bar = tqdm(enumerate(time_iter), total=len(time_iter))
+
+        for i, t in t_bar:
+            if cancel:
+                return None
             # expand the latents if we are doing classifier free guidance
             latent_model_input = np.stack([latents, latents], 0) if guidance_scale > 1.0 else latents[None]
             if isinstance(self.scheduler, LMSDiscreteScheduler):
@@ -201,6 +208,9 @@ class StableDiffusionEngine:
             if mask is not None:
                 init_latents_proper = self.scheduler.add_noise(init_latents, noise, t)
                 latents = ((init_latents_proper * mask) + (latents * (1 - mask)))[0]
+
+            if progress_bar:
+                progress_bar.progress((i+1) / len(time_iter))
 
         image = result(self.vae_decoder.infer_new_request({
             "latents": np.expand_dims(latents, 0)
