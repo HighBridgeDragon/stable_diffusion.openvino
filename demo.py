@@ -1,6 +1,6 @@
 # -- coding: utf-8 --`
 import argparse
-import os
+import numpy as np
 # engine
 from stable_diffusion_engine import StableDiffusionEngine
 # scheduler
