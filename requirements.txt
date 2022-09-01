@@ -7,7 +7,7 @@ scipy
 openvino==2022.1.0
 transformers
 diffusers
-opencv-python
+opencv-python-headless
 tqdm
 huggingface_hub
 streamlit
